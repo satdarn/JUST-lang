@@ -1,0 +1,11 @@
+PUSH 0
+PUSH 0
+LABEL loop
+POP
+PUSH 2
+ADD
+OUT
+DUP
+PUSH 8
+SUB
+JMP $ loop
