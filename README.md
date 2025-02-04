@@ -24,6 +24,8 @@ DUP // duplicates the last value in the stack
 ```
 OUT // outputs the last value of the stack
 PRINT x // prints the variable x's value ($ syntx applies to this opperand)
+OUTC // outputs the ascii character associated with the last value of the stack
+PRINTC x // prints the variable x's value as a ascii character
 ```
 
 

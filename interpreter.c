@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_STACK_SIZE 100
-#define MAX_JUMP_SIZE 100
+#define MAX_STACK_SIZE 1024
+#define MAX_JUMP_SIZE 1024
 
 struct Stack {
   int top;
@@ -26,7 +26,9 @@ void duplicate(struct Stack *stack);
 
 // Output
 void print(struct Stack *stack, int *var_space, int pos);
+void printc(struct Stack *stack, int *var_space, int pos);
 void out(struct Stack *stack);
+void outc(struct Stack *stack);
 
 // Artimatic
 void add(struct Stack *stack);
@@ -142,7 +144,12 @@ int main(int argc, char **argv) {
       token = strtok(NULL, " ");
       int address = get_index(&stack, token[0]);
       print(&stack, var_space, address);
-    } 
+    }
+    else if (strcmp(token, "PRINTC") == 0) {
+      token = strtok(NULL, " ");
+      int address = get_index(&stack, token[0]);
+      printc(&stack, var_space, address);
+    }  
     else if (strcmp(token, "SWP") == 0) {
       swap(&stack);
     } 
@@ -151,6 +158,9 @@ int main(int argc, char **argv) {
     } 
     else if (strcmp(token, "OUT") == 0) {
       out(&stack);
+    }
+    else if (strcmp(token, "OUTC") == 0) {
+      outc(&stack);
     } 
     else if (strcmp(token, "ADD") == 0) {
       add(&stack);
@@ -257,10 +267,13 @@ int peak(struct Stack *stack) {
   return stack->data[stack->top];
 }
 
-void print(struct Stack *stack, int *var_space, int pos) { 
-  
+void print(struct Stack *stack, int *var_space, int pos) {  
     printf("%d\n", var_space[pos]); 
     }
+
+void printc(struct Stack *stack, int *var_space, int pos){
+  printf("%c", var_space[pos]);
+}
 
 void swap(struct Stack *stack) {
   int a = pop(stack);
@@ -275,6 +288,8 @@ void duplicate(struct Stack *stack) {
 }
 
 void out(struct Stack *stack) { printf("%d\n", peak(stack)); }
+
+void outc(struct Stack *stack) {printf("%c", peak(stack));}
 
 void add(struct Stack *stack) {
   int a = pop(stack);
