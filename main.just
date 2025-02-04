@@ -1,10 +1,8 @@
 PUSH 5
-DEF A
-SET A $      // Store n in variable A
+DEF A $      // Store n in variable A
 PUSH 1       // Initialize result as 1
-DEF B
-SET B $      // Store result in variable B
-
+DEF B       // Store result in variable B
+SET B $
 LABEL loop
 GET A        // Push A (n) to stack
 JMPZ A end   // If A == 0, jump to end

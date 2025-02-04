@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
       char* address = token;
       get(&stack, &var_space, address);
     } 
-    else if (strcmp(token, "INDEXOF") == 0) {
+    else if (strcmp(token, "VARINDEX") == 0) {
       token = strtok(NULL, " ");
       remove_newlines(token); // Remove newline character from token
       for (int pos = 0; pos < var_space.count; pos++) {
@@ -261,6 +261,9 @@ int main(int argc, char **argv) {
           push(&stack, pos);
         }
       }
+    }
+    else if(strcmp(token, "JMPINDEX") == 0){
+
     }
     else if (strcmp(token, "INCV") == 0) {
       token = strtok(NULL, " ");
@@ -302,7 +305,9 @@ int main(int argc, char **argv) {
         jump(&stack, file, labels, label_count, token);
       }
     }
-
+    else if (strcmp(token, "DONE") == 0 ){
+        exit(0);
+    }
     line_counter++;
   }
   fclose(file);
@@ -336,7 +341,7 @@ void print(struct Stack *stack, struct VarSpace *var_space, char *name) {
 
 void printc(struct Stack *stack, struct VarSpace*var_space, char *name){
   int pos = get_index(stack, var_space, name);  
-  printf("%d\n", var_space->vars[pos].value); 
+  printf("%c", var_space->vars[pos].value); 
   }
 
 void swap(struct Stack *stack) {

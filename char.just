@@ -1,4 +1,4 @@
-SET A 65
+DEF A 65
 LABEL loop
 PRINTC A
 INCV A

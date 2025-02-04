@@ -2,16 +2,6 @@
 
 ## A stack based approach to interger computation and manipulation
 
-### In JUST there are 5 types of commands... (kinda)
-
-- ### Stack Manipulation
-- ### Output
-- ### Arithmetic
-- ### Variable
-- ### Looping
-
-there is also "macros/subroutines"... but those are yet to be implemented yet
-
 Usage:
 
 ```
@@ -20,6 +10,12 @@ gcc interpreter.c -o interpreter // gcc or any other c compiler
 
 // Preloading stack with values from the command line
 ./interpreter main.just 10 20 400
+```
+
+A note on stack preloading: in order to do so with out proper error handling this syntax should be the first line in the program, stack preloading acts as "command line arguements" and the only form of user input
+
+```
+@PRESTACK x //where x is the number of values that should be preloaded into the stack
 ```
 
 ## Stack Manipulation
@@ -35,10 +31,11 @@ DUP // duplicates the last value in the stack
 
 ```
 OUT // outputs the last value of the stack
-PRINT x // prints the variable x's value ($ syntx applies to this opperand)
+PRINT x // prints the variable x's value ($ syntx applies to this opperand)  
 OUTC // outputs the ascii character associated with the last value of the stack
-PRINTC x // prints the variable x's value as a ascii character
+PRINTC x // prints the variable x's value as a ascii character 
 ```
+note: $ syntax can be used with print and printc as they work with variables
 
 
 ## Arithmetic
@@ -67,15 +64,16 @@ SET var x // sets the variable "var" to the value x
 GET var // gets the variable "var" and pushes to the stack
 INCV var // increments the variable "var"
 DECV var // decrements the variable "var"
-INDEX_OF var // pushes the variable "var" 's position in the var space to the stack
+VARINDEX var // pushes the variable "var" 's position in the var space to the stack
 ```
 
 ## Looping
 
 The $ operator also applies to the variable for the conditionals for looping
-
+The $ operator also applies to the label as the value in the stack will be used to pull a label from the index label space
 ```
 LABEL label // sets the jump point for looping
 JMP var label // if the variable var isnt 0 jump to label
 JMPZ var label // if the variable var is 0 jump to label
+JMPINDEX label // gets the index of the label and push the value to the stack
 ```
