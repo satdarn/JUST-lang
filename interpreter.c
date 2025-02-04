@@ -4,6 +4,7 @@
 
 #define MAX_STACK_SIZE 1024
 #define MAX_JUMP_SIZE 1024
+#define MAX_VAR_SIZE 100
 
 struct Stack {
   int top;
@@ -15,8 +16,23 @@ struct JumpLabel {
   long pos;
 };
 
-void createStack(struct Stack *stack) { stack->top = -1; }
+struct Var {
+  char name[30];
+  int value;
+};
 
+struct VarSpace {
+  struct Var vars[MAX_VAR_SIZE];
+  int count;
+};
+
+void createStack(struct Stack *stack) { stack->top = -1; }
+void createVarSpace(struct VarSpace *var_space) { var_space->count = 0;};
+void createVar(struct Var *var, char* name, int value) { 
+  var->value = value; 
+  strncpy(var->name, name, sizeof(var->name) - 1);
+  var->name[sizeof(var->name) - 1] = '\0'; // Ensure null termination
+  }
 // Stack Operations
 void push(struct Stack *stack, int data);
 int pop(struct Stack *stack);
@@ -25,8 +41,8 @@ void swap(struct Stack *stack);
 void duplicate(struct Stack *stack);
 
 // Output
-void print(struct Stack *stack, int *var_space, int pos);
-void printc(struct Stack *stack, int *var_space, int pos);
+void print(struct Stack *stack, struct VarSpace *var_space, char* name);
+void printc(struct Stack *stack, struct VarSpace *var_space, char* name);
 void out(struct Stack *stack);
 void outc(struct Stack *stack);
 
@@ -40,12 +56,15 @@ void inc(struct Stack *stack);
 void dec(struct Stack *stack);
 
 // Variable
-void set(struct Stack *stack, int *var_space, char index, char *value);
-void get(struct Stack *stack, int *var_space, char index);
-void increment(struct Stack *stack, int *var_space, char index);
-void decrement(struct Stack *stack, int *var_space, char index);
-int get_index(struct Stack *stack, char index);
+void def(struct Stack *stack, struct VarSpace *var_space, char*name, int value);
+void set(struct Stack *stack, struct VarSpace *var_space, char *name, char *value);
+void get(struct Stack *stack, struct VarSpace *var_space, char *name);
+void increment(struct Stack *stack, struct VarSpace *var_space, char *name);
+void decrement(struct Stack *stack, struct VarSpace *var_space, char *name);
+int get_index(struct Stack *stack, struct VarSpace *var_space, char *name);
 void remove_newlines(char *str);
+
+// Loops
 void jump(struct Stack *stack, FILE *file, struct JumpLabel *labels,
           int label_count, char *label);
 
@@ -53,8 +72,10 @@ void error(int error, int line);
 
 /*
 Stack Instruction set
+        DEF
         SET
         GET
+        INDEXOF
         PUSH
         POP
         PRINT
@@ -79,12 +100,20 @@ int main(int argc, char **argv) {
   struct Stack stack;
   createStack(&stack);
 
-  int var_space[26];
+  struct VarSpace var_space;
+  createVarSpace(&var_space);
 
   if (argc < 2) {
     printf("Usage: %s <filename>\n", argv[0]);
     return 1;
   }
+  // Pre loading the stack from the command line
+  if (argc >= 3){
+    for(int i = 2; i < argc; i++){
+      push(&stack, atoi(argv[i]));
+    }
+  }
+
   FILE *file = fopen(argv[1], "r");
   if (file == NULL) {
     error(100, 0);
@@ -96,12 +125,19 @@ int main(int argc, char **argv) {
 
   struct JumpLabel labels[MAX_JUMP_SIZE];
   int label_count = 0;
-  while (fgets(buffer, sizeof(buffer), file)) {
+  while (fgets(buffer, sizeof(buffer), file) != NULL) {
+    if (strlen(buffer) == 0 || (buffer[0] == '\n' || buffer[0] == '\r')) {
+        continue;
+    }
     size_t len = strlen(buffer);
     if (len > 0 && buffer[len - 1] == '\n' && buffer[len - 2] == '\r') {
       buffer[len - 2] = '\0';
     }
+    
     char *token = strtok(buffer, " ");
+    if (token == NULL) {
+      continue; // Skip empty lines or lines without tokens
+    }
     if (strcmp(token, "LABEL") == 0) {
       token = strtok(NULL, " ");
       remove_newlines(token);
@@ -127,6 +163,9 @@ int main(int argc, char **argv) {
     if (buffer == NULL) {
       continue;
     }
+    if(buffer[0] == '\n' || buffer[0] == '\0'){
+      continue;
+    }
     char *token = strtok(buffer, " ");
     remove_newlines(token);
     if (token == NULL) {
@@ -142,13 +181,11 @@ int main(int argc, char **argv) {
     } 
     else if (strcmp(token, "PRINT") == 0) {
       token = strtok(NULL, " ");
-      int address = get_index(&stack, token[0]);
-      print(&stack, var_space, address);
+      print(&stack, &var_space, token);
     }
     else if (strcmp(token, "PRINTC") == 0) {
       token = strtok(NULL, " ");
-      int address = get_index(&stack, token[0]);
-      printc(&stack, var_space, address);
+      printc(&stack, &var_space, token);
     }  
     else if (strcmp(token, "SWP") == 0) {
       swap(&stack);
@@ -183,26 +220,57 @@ int main(int argc, char **argv) {
     else if (strcmp(token, "DEC") == 0) {
       dec(&stack);
     } 
+    else if (strcmp(token, "DEF") ==0) {
+      char* name = strtok(NULL, " ");
+      remove_newlines(token);  
+      token = strtok(NULL, " ");
+      for (int pos = 0; pos < var_space.count; pos++) {
+        if (strcmp(var_space.vars[pos].name, name) == 0) {
+          error(200, line_counter);
+        }
+      }
+      int value = 0;
+      if(token != NULL){
+        if(token[0] == '$'){
+          value = pop(&stack);
+        }
+        else{
+          value = atoi(token);
+        }
+      }
+      def(&stack, &var_space, name, value);
+    }
     else if (strcmp(token, "SET") == 0) {
       token = strtok(NULL, " ");
-      char address = token[0];
+      char* address = token;
+      remove_newlines(address); // Remove newline character from token
       token = strtok(NULL, " ");
-      set(&stack, var_space, address, token);
+      remove_newlines(token);
+      set(&stack, &var_space, address, token);
     } 
     else if (strcmp(token, "GET") == 0) {
       token = strtok(NULL, " ");
-      char address = token[0];
-      get(&stack, var_space, address);
+      char* address = token;
+      get(&stack, &var_space, address);
     } 
+    else if (strcmp(token, "INDEXOF") == 0) {
+      token = strtok(NULL, " ");
+      remove_newlines(token); // Remove newline character from token
+      for (int pos = 0; pos < var_space.count; pos++) {
+        if (strcmp(var_space.vars[pos].name, token) == 0) {
+          push(&stack, pos);
+        }
+      }
+    }
     else if (strcmp(token, "INCV") == 0) {
       token = strtok(NULL, " ");
-      char address = token[0];
-      increment(&stack, var_space, address);
+      char* address = token;
+      increment(&stack, &var_space, address);
     } 
     else if (strcmp(token, "DECV") == 0) {
       token = strtok(NULL, " ");
-      char address = token[0];
-      decrement(&stack, var_space, address);
+      char* address = token;
+      decrement(&stack, &var_space, address);
     } 
     else if (strcmp(token, "JMP") == 0) {
       token = strtok(NULL, " ");
@@ -210,11 +278,8 @@ int main(int argc, char **argv) {
       if (token[0] == '$') {
         condition = peak(&stack);
       } 
-      else if (token[0] >= 'A' && token[0] <= 'Z') {
-        condition = var_space[token[0] - 'A'];
-      }
-      else {
-        condition = atoi(token);
+      else{
+        condition = var_space.vars[get_index(&stack, &var_space, token)].value;
       }
       token = strtok(NULL, " "); 
       if (condition != 0) {
@@ -228,11 +293,8 @@ int main(int argc, char **argv) {
       if (token[0] == '$') {
         condition = peak(&stack);
       } 
-      else if (token[0] >= 'A' && token[0] <= 'Z') {
-        condition = var_space[token[0] - 'A'];
-      }
-      else {
-        condition = atoi(token);
+      else{
+        condition = var_space.vars[get_index(&stack, &var_space, token)].value;
       }
       token = strtok(NULL, " "); 
       if (condition == 0) {
@@ -267,13 +329,15 @@ int peak(struct Stack *stack) {
   return stack->data[stack->top];
 }
 
-void print(struct Stack *stack, int *var_space, int pos) {  
-    printf("%d\n", var_space[pos]); 
-    }
+void print(struct Stack *stack, struct VarSpace *var_space, char *name) {
+  int pos = get_index(stack, var_space, name);  
+  printf("%d\n", var_space->vars[pos].value); 
+  }
 
-void printc(struct Stack *stack, int *var_space, int pos){
-  printf("%c", var_space[pos]);
-}
+void printc(struct Stack *stack, struct VarSpace*var_space, char *name){
+  int pos = get_index(stack, var_space, name);  
+  printf("%d\n", var_space->vars[pos].value); 
+  }
 
 void swap(struct Stack *stack) {
   int a = pop(stack);
@@ -324,10 +388,12 @@ void modulo(struct Stack *stack) {
   int b = pop(stack);
   push(stack, a % b);
 }
+
 void inc(struct Stack *stack) {
   int a = pop(stack);
   push(stack, ++a);
 }
+
 void dec(struct Stack *stack) {
   if (stack->top < 0) {
     error(103, 0); // Stack underflow error
@@ -336,22 +402,21 @@ void dec(struct Stack *stack) {
   stack->data[stack->top]--;
 }
 
-int get_index(struct Stack *stack, char index) {
+int get_index(struct Stack *stack, struct VarSpace *var_space, char *name) {
   int pos;
-  if (index < 'A' && index > 'Z') {
-    error(103, 0);
-    exit(0);
-  }
-
-  if (index == '$') {
+  if (name[0] == '$') {
     pos = pop(stack);
+    return pos;
   } 
-  else {
-    pos = index - 'A';
-  }
-  return pos;
-}
 
+  for (pos = 0; pos < var_space->count; pos++) {
+    if (strcmp(var_space->vars[pos].name, name) == 0) {
+      return pos;
+    }
+  }
+  error(108, 0);
+  exit(1);
+}
 void remove_newlines(char *str) {
   int i, j = 0;
   for (i = 0; str[i] != '\0'; i++) {
@@ -362,32 +427,40 @@ void remove_newlines(char *str) {
   str[j] = '\0'; // Null-terminate the modified string
 }
 
-void set(struct Stack *stack, int *var_space, char index, char *value) {
-  int pos = get_index(stack, index);
-  int data;
+void def(struct Stack *stack, struct VarSpace *var_space, char* name, int value){
+  if (var_space->count >= MAX_VAR_SIZE) {
+    error(107, 0); // Variable space overflow error
+    return;
+  }
+  
+  createVar(&var_space->vars[var_space->count], name, value);
+  var_space->count++;
+}
 
+void set(struct Stack *stack, struct VarSpace *var_space, char *name, char *value) {
+  int pos = get_index(stack, var_space, name);
+  int data;
   if (value[0] == '$') {
     data = pop(stack);
   } else {
     data = atoi(value);
   }
 
-  var_space[pos] = data;
+  var_space->vars[pos].value = data;
 }
-void get(struct Stack *stack, int *var_space, char index) {
-  int pos = get_index(stack, index);
-
-  push(stack, var_space[pos]);
-}
-
-void increment(struct Stack *stack, int *var_space, char index) {
-  int pos = get_index(stack, index);
-  var_space[pos]++;
+void get(struct Stack *stack, struct VarSpace *var_space, char* name) {
+  int pos = get_index(stack, var_space, name);
+  push(stack, var_space->vars[pos].value);
 }
 
-void decrement(struct Stack *stack, int *var_space, char index) {
-  int pos = get_index(stack, index);
-  var_space[pos]--;
+void increment(struct Stack *stack, struct VarSpace *var_space, char* name) {
+  int pos = get_index(stack, var_space, name);
+  var_space->vars[pos].value++;
+}
+
+void decrement(struct Stack *stack, struct VarSpace *var_space, char* name) {
+  int pos = get_index(stack, var_space, name);
+  var_space->vars[pos].value--;
 }
 
 void jump(struct Stack *stack, FILE *file, struct JumpLabel *labels,
@@ -420,11 +493,20 @@ void error(int error, int line) {
   case 104:
     printf("Divide by Zero error");
     break;
-  case 105:
-    printf("Incorrect Variable Index");
-    break;
   case 106:
     printf("Invalid Label");
+    break;
+  case 107:
+    printf("Variable space overflow");
+    break;
+  case 108:
+    printf("Variable not intialized");
+    break;
+  case 200:
+    printf("Variable already defined");
+    break;
+  case 201:
+    printf("Variable not defined");
     break;
   default:
     printf("An error happened at line %d\n", line);

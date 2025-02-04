@@ -2,13 +2,25 @@
 
 ## A stack based approach to interger computation and manipulation
 
-### In JUST there are 5 types of commands, 
+### In JUST there are 5 types of commands... (kinda)
 
 - ### Stack Manipulation
 - ### Output
 - ### Arithmetic
 - ### Variable
 - ### Looping
+
+there is also "macros/subroutines"... but those are yet to be implemented yet
+
+Usage:
+
+```
+gcc interpreter.c -o interpreter // gcc or any other c compiler
+./interpreter main.just // runs the  JUST program
+
+// Preloading stack with values from the command line
+./interpreter main.just 10 20 400
+```
 
 ## Stack Manipulation
 
@@ -41,20 +53,29 @@ DEC // decrements the top
 ```
 
 ## Variables
-There is a "Variable Space" of 26 integers each assigned to the corresponding alphabetic character A-Z
-using the $ as the opperand instead of a variable name will pop the value from the stack and use that as opperand
+
+There is a "Variable Space" of size MAX_VARIABLE integers
+
+Using the $ as the opperand will pop the value from the stack and use it as the opperand
+
+In the case of a variable name being replaced with the $, the opperand poped of the stack will
+be used to find the variable at the postion in the variable space
 
 ```
-SET A x // sets the variable A to the value x
-GET A // gets the variable A and pushes to the stack
-INCV A // increments the variable A
-DECV A // decrements the variable A
+DEF var x // creates a variable with name "var" and initalizes it with the value x
+SET var x // sets the variable "var" to the value x
+GET var // gets the variable "var" and pushes to the stack
+INCV var // increments the variable "var"
+DECV var // decrements the variable "var"
+INDEX_OF var // pushes the variable "var" 's position in the var space to the stack
 ```
 
 ## Looping
 
+The $ operator also applies to the variable for the conditionals for looping
+
 ```
 LABEL label // sets the jump point for looping
-JMP A label // if the variable A isnt 0 jump to label
-JMPZ A label // if the variable A is 0 jump to label
+JMP var label // if the variable var isnt 0 jump to label
+JMPZ var label // if the variable var is 0 jump to label
 ```
