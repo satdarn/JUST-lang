@@ -5,7 +5,7 @@ DEF ARR1 20
 DEF ARR2 30
 DEF ARR3 40
 DEF ARR4 50
-
+MAIN
 VARINDEX ARR0 // Get the index of the first element
 DEF X $ // make x the first index
 VARINDEX ARR4 // Get the index of the last element

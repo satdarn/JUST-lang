@@ -1,4 +1,5 @@
 @PRESTACK 0
+MAIN
 SET A 0    // First Fibonacci number (prev)
 SET B 1    // Second Fibonacci number (current)
 SET C 10   // Counter for 10 iterations

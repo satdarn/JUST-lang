@@ -16,6 +16,11 @@ struct JumpLabel {
   long pos;
 };
 
+struct LabelSpace {
+  struct JumpLabel labels[MAX_JUMP_SIZE];
+  int count;
+};
+
 struct Var {
   char name[30];
   int value;
@@ -32,7 +37,18 @@ void createVar(struct Var *var, char* name, int value) {
   var->value = value; 
   strncpy(var->name, name, sizeof(var->name) - 1);
   var->name[sizeof(var->name) - 1] = '\0'; // Ensure null termination
+}
+
+void createLabelSpace(struct LabelSpace *label_space) { label_space->count = 0;};
+
+
+void makeLabel(struct LabelSpace *label_space, FILE* file, char *name) {
+  if (label_space->count < MAX_JUMP_SIZE) {
+    label_space->labels[label_space->count].pos = ftell(file);
+    strcpy(label_space->labels[label_space->count].name, name);
+    label_space->count++;
   }
+}
 // Stack Operations
 void push(struct Stack *stack, int data);
 int pop(struct Stack *stack);
@@ -65,8 +81,7 @@ int get_index(struct Stack *stack, struct VarSpace *var_space, char *name);
 void remove_newlines(char *str);
 
 // Loops
-void jump(struct Stack *stack, FILE *file, struct JumpLabel *labels,
-          int label_count, char *label);
+void jump(struct Stack *stack, FILE *file, struct LabelSpace* labels, char *label);
 
 void error(int error, int line);
 
@@ -103,6 +118,10 @@ int main(int argc, char **argv) {
   struct VarSpace var_space;
   createVarSpace(&var_space);
 
+  struct LabelSpace label_space;
+  createLabelSpace(&label_space);
+
+
   if (argc < 2) {
     printf("Usage: %s <filename>\n", argv[0]);
     return 1;
@@ -122,9 +141,6 @@ int main(int argc, char **argv) {
 
   char buffer[1024];
   int line_counter = 1;
-
-  struct JumpLabel labels[MAX_JUMP_SIZE];
-  int label_count = 0;
   while (fgets(buffer, sizeof(buffer), file) != NULL) {
     if (strlen(buffer) == 0 || (buffer[0] == '\n' || buffer[0] == '\r')) {
         continue;
@@ -141,17 +157,23 @@ int main(int argc, char **argv) {
     if (strcmp(token, "LABEL") == 0) {
       token = strtok(NULL, " ");
       remove_newlines(token);
-      if (label_count < MAX_JUMP_SIZE) {
-        labels[label_count].pos = ftell(file);
-        strcpy(labels[label_count].name, token);
-        label_count++;
-      }
+      makeLabel(&label_space, file, token);
+    }
+    else if (strcmp(token, "MACRO") == 0) {
+      token = strtok(NULL, " ");
+      remove_newlines(token);
+      makeLabel(&label_space, file, token);
+    }
+    else if (strcmp(token, "MAIN")==0){
+      remove_newlines(token);
+      makeLabel(&label_space, file, token);
     }
     line_counter++;
   }
   rewind(file);
-  line_counter = 1;
   // Read the file line by line
+  long call_label;
+  jump(&stack, file, &label_space, "MAIN");
   while (fgets(buffer, sizeof(buffer), file)) {
     // Remove the newline character at the end of the line (if present)
     size_t len = strlen(buffer);
@@ -226,7 +248,7 @@ int main(int argc, char **argv) {
       token = strtok(NULL, " ");
       for (int pos = 0; pos < var_space.count; pos++) {
         if (strcmp(var_space.vars[pos].name, name) == 0) {
-          error(200, line_counter);
+          error(200, 0);
         }
       }
       int value = 0;
@@ -262,9 +284,6 @@ int main(int argc, char **argv) {
         }
       }
     }
-    else if(strcmp(token, "JMPINDEX") == 0){
-
-    }
     else if (strcmp(token, "INCV") == 0) {
       token = strtok(NULL, " ");
       char* address = token;
@@ -287,7 +306,7 @@ int main(int argc, char **argv) {
       token = strtok(NULL, " "); 
       if (condition != 0) {
         remove_newlines(token); 
-        jump(&stack, file, labels, label_count, token);
+        jump(&stack, file, &label_space, token);
       }
     } 
     else if (strcmp(token, "JMPZ") == 0) {
@@ -302,13 +321,23 @@ int main(int argc, char **argv) {
       token = strtok(NULL, " "); 
       if (condition == 0) {
         remove_newlines(token);
-        jump(&stack, file, labels, label_count, token);
+        jump(&stack, file, &label_space, token);
+      }
+    }
+    else if (strcmp(token, "CALL") == 0) {
+      token = strtok(NULL, " ");
+      remove_newlines(token);
+      call_label = ftell(file);
+      jump(&stack, file, &label_space, token);
+    }
+    else if (strcmp(token, "END") == 0){
+      if(call_label != 0) {
+        fseek(file, call_label, SEEK_SET);
       }
     }
     else if (strcmp(token, "DONE") == 0 ){
         exit(0);
     }
-    line_counter++;
   }
   fclose(file);
   return 0;
@@ -468,11 +497,10 @@ void decrement(struct Stack *stack, struct VarSpace *var_space, char* name) {
   var_space->vars[pos].value--;
 }
 
-void jump(struct Stack *stack, FILE *file, struct JumpLabel *labels,
-          int label_count, char *name) {
-  for (int i = 0; i < label_count; i++) {
-    if (strcmp(labels[i].name, name) == 0) {
-      fseek(file, labels[i].pos, SEEK_SET);
+void jump(struct Stack *stack, FILE *file, struct LabelSpace *labels, char *name) {
+  for (int i = 0; i < labels->count; i++) {
+    if (strcmp(labels->labels[i].name, name) == 0) {
+      fseek(file, labels->labels[i].pos, SEEK_SET);
       return;
     }
   }
