@@ -2,7 +2,29 @@
 
 ## A stack based approach to interger computation and manipulation
 
-##Usage:
+### A breif introduction to the function of JUST
+
+A program is interpreted line by line, and each command is executed one after another
+there is a stack of integers which act as a way to manipulate values, there are also
+2 indexed "spaces".
+
+One is for varibles and the other is for labels. You can use the name
+of a variable or label in a command that requires it or its index can be poped from
+the stack with ```$```.
+
+In order to have "Command Line arguments" we allow integers to be preloaded into the
+stack before any other command is executed. we define the number of integers to accept with out error
+with ```@PRESTACK x```
+
+In order to have while and for loops we have labels and conditional jumps.
+
+To avoid writing chunks of code over and over, a ```MACRO``` can be defined and called
+over and over again.
+
+The program entry point is the label ```MAIN``` and the code between that and the 
+```DONE``` command is what is executed.
+
+## Usage:
 
 ```PlainText
 gcc interpreter.c -o interpreter // gcc or any other c compiler
@@ -14,13 +36,13 @@ gcc interpreter.c -o interpreter // gcc or any other c compiler
 
 ## An example of a valid program
 ```PlainText
-@PRESTACK 0 // not command line arguments required
+@PRESTACK 0 // no command line arguments required
 MAIN // entry point of the program
 DEF var1 10 // defines var1 in the var space and assigns it to the value 10
 GET var1 // pushes the value of var1 to the stack
 INCV var1 // increments the value of var1
 OUT // pops and prints the value from the top of the stack
-DONE
+DONE // Terminates the program with out error
 ```
 
 
@@ -34,7 +56,7 @@ SWAP // swaps the last two values of the stack
 DUP // duplicates the last value in the stack
 ```
 
-a note on stack preloading: in order to do so with out proper error handling this syntax should be the first line in the program
+note: with stack preloading, in order to do so with out proper error handling this syntax should be the first line in the program
 
 
 ```PlainText
@@ -45,9 +67,9 @@ a note on stack preloading: in order to do so with out proper error handling thi
 ## Output
 
 ```PlainText
-OUT // outputs the last value of the stack
+OUT // pops and outputs the last value of the stack
 PRINT x // prints the variable x's value ($ syntx applies to this opperand)  
-OUTC // outputs the ascii character associated with the last value of the stack
+OUTC // pops and outputs the ascii character associated with the last value of the stack
 PRINTC x // prints the variable x's value as a ascii character 
 ```
 note: $ syntax can be used with print and printc as they work with variables
@@ -62,6 +84,14 @@ DIV // divides the two top elements and pushs the quotient
 MOD // divides the two top elements and pushs the remander
 INC // increments the top
 DEC // decrements the top
+```
+
+## Booleans operators
+```plain text
+ISEQUAL // pops the two top values of the stack pushes 1 if there equal, 0 otherwise
+ISNOTEQUAL // pops the two top values of the stack and pushes 1 if there note equal
+ISGREATER // pop the two values, if the second is greater then push 1
+ISLESSER // pop the two values, if the second is lesser then push 1
 ```
 
 ## Variables
@@ -85,7 +115,8 @@ VARINDEX var // pushes the variable "var" 's position in the var space to the st
 ## Looping
 
 The $ operator also applies to the variable for the conditionals for looping
-The $ operator also applies to the label as the value in the stack will be used to pull a label from the index label space
+
+The $ operator also applies to the label as the value in the stack will be used to pull a label from the indexed label space
 ```PlainText
 LABEL label // sets the jump point for looping
 JMP var label // if the variable var isnt 0 jump to label

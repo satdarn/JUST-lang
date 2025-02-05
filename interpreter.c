@@ -242,6 +242,42 @@ int main(int argc, char **argv) {
     else if (strcmp(token, "DEC") == 0) {
       dec(&stack);
     } 
+    else if (strcmp(token, "ISEQUAL") == 0) {
+      int a = pop(&stack);
+      int b = pop(&stack);
+      if (a == b) {
+        push(&stack, 1);
+      } else {
+        push(&stack, 0);
+      }
+    }
+    else if (strcmp(token, "ISNOTEQUAL") == 0) {
+      int a = pop(&stack);
+      int b = pop(&stack);
+      if (a!= b) {
+        push(&stack, 1);
+      } else {
+        push(&stack, 0);
+      }
+    }
+    else if (strcmp(token, "ISGREATER") == 0) {
+      int a = pop(&stack);
+      int b = pop(&stack);
+      if (a > b) {
+        push(&stack, 1);
+      } else {
+        push(&stack, 0);
+      }
+    }
+    else if (strcmp(token, "ISLESSER") == 0) {
+      int a = pop(&stack);
+      int b = pop(&stack);
+      if (a < b) {
+        push(&stack, 1);
+      } else {
+        push(&stack, 0);
+      }
+    }
     else if (strcmp(token, "DEF") ==0) {
       char* name = strtok(NULL, " ");
       remove_newlines(token);  
