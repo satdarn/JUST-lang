@@ -1,3 +1,5 @@
+@PRESTACK 0
+MAIN
 DEF ARR0 10 // Create a sudo array as 5 variables in sequence in the var space
 DEF ARR1 20
 DEF ARR2 30

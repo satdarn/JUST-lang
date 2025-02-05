@@ -1,3 +1,4 @@
+@PRESTACK 0
 PUSH 5
 DEF A $      // Store n in variable A
 PUSH 1       // Initialize result as 1
