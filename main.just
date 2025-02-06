@@ -1,22 +1,39 @@
-@PRESTACK 0
-MAIN
-PUSH 5
-DEF A $      // Store n in variable A
-PUSH 1       // Initialize result as 1
-DEF B       // Store result in variable B
-SET B $
-LABEL loop
-GET A        // Push A (n) to stack
-JMPZ A end   // If A == 0, jump to end
+@PRESTACK 1 // Expects one command-line argument (the number to calculate the factorial of)
+MAIN // Entry point of the program
 
-GET B        // Push B (result) to stack
-GET A        // Push A (n) to stack
-MUL          // Multiply result by n
-SET B $      // Store the new result in B
+// Define variables
+DEF result 1 // Holds the result of the factorial calculation
+DEF index $ // Holds the input number
+DEF temp  // Temporary variable for calculations
 
-DECV A       // Decrement n
-JMP A loop   // Jump to loop if A != 0
+// Define a label for the loop
+LABEL factorial_loop
 
-LABEL end
-GET B        // Push final result to stack
-OUT          // Output the result
+GET index
+PUSH 0
+ISLESSER
+JMPZ $ done // If n is 0, jump to the end
+
+// Multiply result by n and store it in result
+GET result
+GET index
+MUL
+SET result $
+
+// Decrement n
+GET index
+DEC
+SET index $
+
+// Jump back to the start of the loop
+JMP $ factorial_loop
+
+// Label for the end of the program
+LABEL done
+
+// Print the result
+GET result
+OUT
+
+// Terminate the program
+DONE

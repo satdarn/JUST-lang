@@ -203,10 +203,12 @@ int main(int argc, char **argv) {
     } 
     else if (strcmp(token, "PRINT") == 0) {
       token = strtok(NULL, " ");
+      remove_newlines(token);
       print(&stack, &var_space, token);
     }
     else if (strcmp(token, "PRINTC") == 0) {
       token = strtok(NULL, " ");
+      remove_newlines(token);
       printc(&stack, &var_space, token);
     }  
     else if (strcmp(token, "SWP") == 0) {
@@ -309,6 +311,7 @@ int main(int argc, char **argv) {
     else if (strcmp(token, "GET") == 0) {
       token = strtok(NULL, " ");
       char* address = token;
+      remove_newlines(address); // Remove newline character from token
       get(&stack, &var_space, address);
     } 
     else if (strcmp(token, "VARINDEX") == 0) {
